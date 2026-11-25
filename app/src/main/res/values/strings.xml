@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">RecordatoriosContextuales</string>
+    <string name="titulo_pantalla">Mis recordatorios</string>
+    <string name="lista_vacia">No hay recordatorios</string>
+    <string name="sin_resultados">Ningún recordatorio coincide con los filtros</string>
+    <string name="todas_las_prioridades">Todas</string>
+    <string name="prioridad_valor">Prioridad: %1$s</string>
+    <string name="estado_pendiente">Estado: Pendiente</string>
+    <string name="estado_completado">Estado: Completado (%1$s)</string>
+    <string name="estado_cancelado">Estado: Cancelado (%1$s)</string>
+    <string name="sin_motivo">sin motivo</string>
+    <string name="aviso_valor">Aviso: %1$s</string>
+    <string name="ubicacion_valor">Ubicación: %1$s</string>
+</resources>
