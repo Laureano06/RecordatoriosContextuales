@@ -10,7 +10,9 @@ data class Recordatorio(
     val estado: EstadoRecordatorio = EstadoRecordatorio.Pendiente,
     val descripcion: String? = null,
     val fechaAviso: LocalDateTime? = null,
-    val ubicacion: String? = null
+    val ubicacion: String? = null,
+    // Si el cambio ya llegó al servicio remoto o todavía está pendiente
+    val estadoSync: EstadoSync = EstadoSync.Sincronizado
 )
 
 // Devuelve una copia: el original no se modifica

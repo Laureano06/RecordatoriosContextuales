@@ -88,7 +88,13 @@ fun PantallaCrear(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.nuevo_recordatorio)) },
+                title = {
+                    Text(
+                        stringResource(
+                            if (estado.esEdicion) R.string.editar_recordatorio else R.string.nuevo_recordatorio
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onCancelar) {
                         Icon(

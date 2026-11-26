@@ -10,13 +10,20 @@ import androidx.navigation.navArgument
 import com.laureano.recordatorios.ui.crear.RutaCrear
 import com.laureano.recordatorios.ui.detalle.RutaDetalle
 import com.laureano.recordatorios.ui.listado.RutaListado
+import com.laureano.recordatorios.ui.preferencias.RutaPreferencias
 
 object Rutas {
     const val LISTADO = "listado"
-    const val CREAR = "crear"
     const val ARG_ID = "id"
-    const val DETALLE = "detalle/{$ARG_ID}"
+    const val SIN_ID = -1L
 
+    // El mismo formulario sirve para crear (sin id) y para editar (con id)
+    const val FORMULARIO = "formulario?$ARG_ID={$ARG_ID}"
+    const val DETALLE = "detalle/{$ARG_ID}"
+    const val PREFERENCIAS = "preferencias"
+
+    fun crear() = "formulario"
+    fun editar(id: Long) = "formulario?$ARG_ID=$id"
     fun detalle(id: Long) = "detalle/$id"
 }
 
@@ -27,15 +34,26 @@ fun NavegacionApp(navController: NavHostController = rememberNavController()) {
         composable(Rutas.LISTADO) {
             RutaListado(
                 onCrearRecordatorio = {
-                    navController.navigate(Rutas.CREAR) { launchSingleTop = true }
+                    navController.navigate(Rutas.crear()) { launchSingleTop = true }
                 },
                 onRecordatorioClick = { id ->
                     navController.navigate(Rutas.detalle(id)) { launchSingleTop = true }
+                },
+                onAbrirPreferencias = {
+                    navController.navigate(Rutas.PREFERENCIAS) { launchSingleTop = true }
                 }
             )
         }
-        composable(Rutas.CREAR) {
-            // Al guardar o cancelar se vuelve al listado que ya estaba en la pila
+        composable(
+            route = Rutas.FORMULARIO,
+            arguments = listOf(
+                navArgument(Rutas.ARG_ID) {
+                    type = NavType.LongType
+                    defaultValue = Rutas.SIN_ID
+                }
+            )
+        ) {
+            // Al guardar o cancelar se vuelve a la pantalla anterior, sin duplicarla
             RutaCrear(
                 onGuardar = { navController.popBackStack() },
                 onCancelar = { navController.popBackStack() }
@@ -45,7 +63,15 @@ fun NavegacionApp(navController: NavHostController = rememberNavController()) {
             route = Rutas.DETALLE,
             arguments = listOf(navArgument(Rutas.ARG_ID) { type = NavType.LongType })
         ) {
-            RutaDetalle(onVolver = { navController.popBackStack() })
+            RutaDetalle(
+                onVolver = { navController.popBackStack() },
+                onEditar = { id ->
+                    navController.navigate(Rutas.editar(id)) { launchSingleTop = true }
+                }
+            )
+        }
+        composable(Rutas.PREFERENCIAS) {
+            RutaPreferencias(onVolver = { navController.popBackStack() })
         }
     }
 }

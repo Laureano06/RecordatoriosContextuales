@@ -1,6 +1,7 @@
 package com.laureano.recordatorios.data
 
 import com.laureano.recordatorios.domain.Categoria
+import com.laureano.recordatorios.domain.Categorias
 import com.laureano.recordatorios.domain.EstadoPantalla
 import com.laureano.recordatorios.domain.EstadoRecordatorio
 import com.laureano.recordatorios.domain.Prioridad
@@ -12,10 +13,10 @@ import java.time.LocalDateTime
 object DatosSimulados {
     private val ahora: LocalDateTime = LocalDateTime.now()
 
-    private val trabajo = Categoria(1, "Trabajo")
-    private val estudio = Categoria(2, "Estudio")
-    private val salud = Categoria(3, "Salud")
-    private val hogar = Categoria(4, "Hogar")
+    private val trabajo = Categorias.trabajo
+    private val estudio = Categorias.estudio
+    private val salud = Categorias.salud
+    private val hogar = Categorias.hogar
 
     // List: conserva el orden. El último es inválido a propósito
     val recordatorios: List<Recordatorio> = listOf(

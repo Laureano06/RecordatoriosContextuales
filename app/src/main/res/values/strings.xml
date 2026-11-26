@@ -15,7 +15,6 @@
     <string name="nuevo_recordatorio">Nuevo recordatorio</string>
     <string name="reintentar">Reintentar</string>
     <string name="volver">Volver</string>
-    <string name="simular_estado">Simular estado</string>
     <string name="campo_titulo">Título</string>
     <string name="campo_descripcion">Descripción (opcional)</string>
     <string name="campo_categoria">Categoría</string>
@@ -32,4 +31,23 @@
     <string name="dato_ubicacion">Ubicación</string>
     <string name="dato_id">Identificador</string>
     <string name="sin_dato">Sin datos</string>
+    <string name="editar_recordatorio">Editar recordatorio</string>
+    <string name="editar">Editar</string>
+    <string name="eliminar">Eliminar</string>
+    <string name="marcar_completado">Marcar como completado</string>
+    <string name="confirmar_eliminar_titulo">¿Eliminar el recordatorio?</string>
+    <string name="confirmar_eliminar_texto">Se borra del dispositivo y, al sincronizar, también del servicio.</string>
+    <string name="dato_sincronizacion">Sincronización</string>
+    <string name="sincronizar">Sincronizar</string>
+    <string name="sync_inactiva">Datos guardados en el dispositivo</string>
+    <string name="sync_en_curso">Sincronizando…</string>
+    <string name="sync_completa">Todo sincronizado (%1$s)</string>
+    <plurals name="cambios_pendientes">
+        <item quantity="one">%1$d cambio pendiente de sincronizar</item>
+        <item quantity="other">%1$d cambios pendientes de sincronizar</item>
+    </plurals>
+    <string name="titulo_preferencias">Preferencias</string>
+    <string name="pref_tema">Tema</string>
+    <string name="pref_mostrar_completados">Mostrar recordatorios completados</string>
+    <string name="pref_orden">Orden del listado</string>
 </resources>

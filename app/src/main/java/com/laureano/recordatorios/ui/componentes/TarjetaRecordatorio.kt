@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.laureano.recordatorios.R
 import com.laureano.recordatorios.domain.Categoria
+import com.laureano.recordatorios.domain.EstadoSync
 import com.laureano.recordatorios.domain.Recordatorio
 
 // Tarjeta del listado: título, categoría, prioridad y estado
@@ -53,6 +54,18 @@ fun TarjetaRecordatorio(
                 text = stringResource(R.string.estado_valor, textoEstado(recordatorio.estado)),
                 style = MaterialTheme.typography.bodyMedium
             )
+            // Los cambios que todavía no llegaron al servicio se marcan con texto, no solo color
+            if (recordatorio.estadoSync != EstadoSync.Sincronizado) {
+                Text(
+                    text = recordatorio.estadoSync.etiqueta,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (recordatorio.estadoSync == EstadoSync.ConError) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.tertiary
+                    }
+                )
+            }
         }
     }
 }

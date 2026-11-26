@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -16,9 +18,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -29,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.laureano.recordatorios.R
 import com.laureano.recordatorios.data.DatosSimulados
+import com.laureano.recordatorios.domain.EstadoRecordatorio
+import com.laureano.recordatorios.domain.EstadoSync
 import com.laureano.recordatorios.domain.Recordatorio
 import com.laureano.recordatorios.ui.componentes.EtiquetaCategoria
 import com.laureano.recordatorios.ui.componentes.IndicadorCarga
@@ -40,13 +49,24 @@ import com.laureano.recordatorios.ui.theme.RecordatoriosContextualesTheme
 @Composable
 fun RutaDetalle(
     onVolver: () -> Unit,
+    onEditar: (Long) -> Unit,
     viewModel: DetalleViewModel = viewModel(factory = DetalleViewModel.Factory)
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
+    val eliminado by viewModel.eliminado.collectAsStateWithLifecycle()
+
+    // Después de eliminar se vuelve al listado
+    LaunchedEffect(eliminado) {
+        if (eliminado) onVolver()
+    }
+
     PantallaDetalle(
-        estado = estado,
+        estado = if (eliminado) DetalleUiState.Cargando else estado,
         onVolver = onVolver,
-        onReintentar = viewModel::onReintentar
+        onReintentar = viewModel::onReintentar,
+        onEditar = onEditar,
+        onCompletar = viewModel::onCompletar,
+        onEliminar = viewModel::onEliminar
     )
 }
 
@@ -56,8 +76,14 @@ fun PantallaDetalle(
     estado: DetalleUiState,
     onVolver: () -> Unit,
     onReintentar: () -> Unit,
+    onEditar: (Long) -> Unit,
+    onCompletar: () -> Unit,
+    onEliminar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var confirmarEliminar by rememberSaveable { mutableStateOf(false) }
+    val encontrado = estado as? DetalleUiState.Encontrado
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
@@ -69,6 +95,22 @@ fun PantallaDetalle(
                             painter = painterResource(R.drawable.ic_atras),
                             contentDescription = stringResource(R.string.volver)
                         )
+                    }
+                },
+                actions = {
+                    if (encontrado != null) {
+                        IconButton(onClick = { onEditar(encontrado.recordatorio.id) }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_editar),
+                                contentDescription = stringResource(R.string.editar)
+                            )
+                        }
+                        IconButton(onClick = { confirmarEliminar = true }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_eliminar),
+                                contentDescription = stringResource(R.string.eliminar)
+                            )
+                        }
                     }
                 }
             )
@@ -93,14 +135,36 @@ fun PantallaDetalle(
                     textoAccion = stringResource(R.string.reintentar),
                     onAccion = onReintentar
                 )
-                is DetalleUiState.Encontrado -> ContenidoDetalle(estado.recordatorio)
+                is DetalleUiState.Encontrado -> ContenidoDetalle(
+                    recordatorio = estado.recordatorio,
+                    onCompletar = onCompletar
+                )
             }
         }
+    }
+
+    if (confirmarEliminar) {
+        AlertDialog(
+            onDismissRequest = { confirmarEliminar = false },
+            title = { Text(stringResource(R.string.confirmar_eliminar_titulo)) },
+            text = { Text(stringResource(R.string.confirmar_eliminar_texto)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmarEliminar = false
+                    onEliminar()
+                }) { Text(stringResource(R.string.eliminar)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmarEliminar = false }) {
+                    Text(stringResource(R.string.cancelar))
+                }
+            }
+        )
     }
 }
 
 @Composable
-private fun ContenidoDetalle(recordatorio: Recordatorio) {
+private fun ContenidoDetalle(recordatorio: Recordatorio, onCompletar: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -137,7 +201,12 @@ private fun ContenidoDetalle(recordatorio: Recordatorio) {
                     stringResource(R.string.dato_ubicacion),
                     recordatorio.ubicacion ?: stringResource(R.string.sin_dato)
                 )
-                FilaDato(stringResource(R.string.dato_id), recordatorio.id.toString())
+                FilaDato(stringResource(R.string.dato_sincronizacion), recordatorio.estadoSync.etiqueta)
+            }
+        }
+        if (recordatorio.estado is EstadoRecordatorio.Pendiente) {
+            Button(onClick = onCompletar, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.marcar_completado))
             }
         }
     }
@@ -160,9 +229,14 @@ private fun FilaDato(etiqueta: String, valor: String) {
 private fun PantallaDetallePreview() {
     RecordatoriosContextualesTheme {
         PantallaDetalle(
-            estado = DetalleUiState.Encontrado(DatosSimulados.recordatorios.first()),
+            estado = DetalleUiState.Encontrado(
+                DatosSimulados.recordatorios.first().copy(estadoSync = EstadoSync.Pendiente)
+            ),
             onVolver = {},
-            onReintentar = {}
+            onReintentar = {},
+            onEditar = {},
+            onCompletar = {},
+            onEliminar = {}
         )
     }
 }

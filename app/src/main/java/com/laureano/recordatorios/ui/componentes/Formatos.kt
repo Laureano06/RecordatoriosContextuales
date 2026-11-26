@@ -14,6 +14,10 @@ private val formatoFecha = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
 
 fun LocalDateTime.formatear(): String = format(formatoFecha)
 
+private val formatoHora = DateTimeFormatter.ofPattern("HH:mm")
+
+fun LocalDateTime.formatearHora(): String = format(formatoHora)
+
 fun colorDeCategoria(categoria: Categoria): Color =
     DatosSimulados.coloresPorCategoria[categoria]?.let { Color(it) } ?: Color.DarkGray
 

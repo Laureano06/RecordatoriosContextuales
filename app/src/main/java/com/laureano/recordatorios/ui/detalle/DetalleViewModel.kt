@@ -7,16 +7,23 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.laureano.recordatorios.data.Dependencias
 import com.laureano.recordatorios.data.RecordatorioRepository
+import com.laureano.recordatorios.domain.EstadoRecordatorio
 import com.laureano.recordatorios.domain.Recordatorio
+import com.laureano.recordatorios.ui.contenedor
 import com.laureano.recordatorios.ui.navegacion.Rutas
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.io.IOException
+import java.time.LocalDateTime
 
 sealed interface DetalleUiState {
     data object Cargando : DetalleUiState
@@ -30,35 +37,40 @@ class DetalleViewModel(
     private val repositorio: RecordatorioRepository
 ) : ViewModel() {
 
-    // La navegación solo pasa el id; el recordatorio se busca en el repositorio
+    // La navegación solo pasa el id; los datos se leen de Room
     private val id: Long = checkNotNull(savedStateHandle[Rutas.ARG_ID])
 
-    private val _uiState = MutableStateFlow<DetalleUiState>(DetalleUiState.Cargando)
-    val uiState: StateFlow<DetalleUiState> = _uiState.asStateFlow()
+    private val intento = MutableStateFlow(0)
 
-    init {
-        cargar()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<DetalleUiState> = intento
+        .flatMapLatest {
+            repositorio.observarRecordatorio(id)
+                .map { it?.let(DetalleUiState::Encontrado) ?: DetalleUiState.NoEncontrado }
+                .catch { emit(DetalleUiState.Error("No se pudo leer el recordatorio")) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetalleUiState.Cargando)
+
+    // Avisa a la pantalla que ya puede volver al listado
+    private val _eliminado = MutableStateFlow(false)
+    val eliminado: StateFlow<Boolean> = _eliminado.asStateFlow()
+
+    fun onReintentar() = intento.update { it + 1 }
+
+    fun onCompletar() {
+        viewModelScope.launch {
+            repositorio.cambiarEstado(id, EstadoRecordatorio.Completado(LocalDateTime.now()))
+        }
     }
 
-    fun onReintentar() = cargar()
-
-    private fun cargar() {
-        viewModelScope.launch {
-            _uiState.update { DetalleUiState.Cargando }
-            val nuevoEstado = try {
-                repositorio.obtenerPorId(id)
-                    ?.let { DetalleUiState.Encontrado(it) }
-                    ?: DetalleUiState.NoEncontrado
-            } catch (e: IOException) {
-                DetalleUiState.Error(e.message ?: "Ocurrió un error inesperado")
-            }
-            _uiState.update { nuevoEstado }
-        }
+    fun onEliminar() {
+        _eliminado.update { true }
+        viewModelScope.launch { repositorio.eliminar(id) }
     }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer { DetalleViewModel(createSavedStateHandle(), Dependencias.repositorio) }
+            initializer { DetalleViewModel(createSavedStateHandle(), contenedor().recordatorios) }
         }
     }
 }

@@ -1,0 +1,12 @@
+# Copiá este archivo como api.properties (no se sube al repositorio) si necesitás otra URL.
+# Sin api.properties se usa http://localhost:8090/
+#
+# Con localhost, el emulador o el teléfono conectado por USB llegan al servicio de la PC
+# después de ejecutar una vez:  adb reverse tcp:8090 tcp:8090
+#
+# Alternativas:
+#   api.urlBase=http://10.0.2.2:8090/       (la PC vista desde algunos emuladores)
+#   api.urlBase=http://192.168.0.10:8090/   (IP de la PC en la red local; hay que permitirla
+#                                            en res/xml/network_security_config.xml)
+# La URL debe terminar en /. El servicio simulado no usa credenciales.
+api.urlBase=http://localhost:8090/
