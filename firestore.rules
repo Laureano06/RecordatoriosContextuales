@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Copia de las reglas publicadas en la consola de Firebase (Firestore > Reglas)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esDuenio(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function datosValidos(uid, reminderId) {
+      let d = request.resource.data;
+      return d.uid == uid
+        && d.uuid == reminderId
+        && d.titulo is string && d.titulo.size() >= 4 && d.titulo.size() <= 60
+        && (d.descripcion == null || (d.descripcion is string && d.descripcion.size() <= 200))
+        && d.prioridad in ['ALTA', 'MEDIA', 'BAJA']
+        && d.estado in ['PENDIENTE', 'COMPLETADO', 'CANCELADO'];
+    }
+
+    // users: producción. dev_users: variante de desarrollo. Misma regla en las dos:
+    // cada cuenta solo puede leer y escribir los recordatorios de su propio uid
+    match /{coleccion}/{uid}/reminders/{reminderId} {
+      allow read, delete: if coleccion in ['users', 'dev_users'] && esDuenio(uid);
+      allow create, update: if coleccion in ['users', 'dev_users'] && esDuenio(uid)
+        && datosValidos(uid, reminderId);
+    }
+
+    // Cualquier otra ruta queda cerrada
+  }
+}

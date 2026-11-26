@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-// Valores de la columna estadoSync: qué operación falta enviar al servicio
+// Valores de la columna estadoSync: qué operación falta enviar a la nube
 object EstadoSyncLocal {
     const val SINCRONIZADO = "SINCRONIZADO"
     const val PENDIENTE_CREAR = "PENDIENTE_CREAR"
@@ -14,13 +14,17 @@ object EstadoSyncLocal {
 
 @Entity(
     tableName = "recordatorios",
-    // El uuid identifica el recordatorio en el dispositivo y en el servicio: evita duplicados
-    indices = [Index(value = ["uuid"], unique = true)]
+    indices = [
+        // El uuid es también el id del documento en Firestore: evita duplicados
+        Index(value = ["uuid"], unique = true),
+        Index(value = ["uid"])
+    ]
 )
 data class RecordatorioEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    // Cuenta dueña del recordatorio (uid de Firebase Authentication)
+    val uid: String,
     val uuid: String,
-    val remotoId: Long? = null,
     val titulo: String,
     val descripcion: String? = null,
     val categoriaId: Long,

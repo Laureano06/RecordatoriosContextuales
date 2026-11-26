@@ -5,7 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [RecordatorioEntity::class], version = 1, exportSchema = false)
+// Versión 2: se agregó el uid de la cuenta y se quitó el id del servicio REST de la Actividad 3
+@Database(entities = [RecordatorioEntity::class], version = 2, exportSchema = false)
 abstract class BaseDatos : RoomDatabase() {
 
     abstract fun recordatorioDao(): RecordatorioDao
@@ -21,7 +22,11 @@ abstract class BaseDatos : RoomDatabase() {
                     context.applicationContext,
                     BaseDatos::class.java,
                     "recordatorios.db"
-                ).build().also { instancia = it }
+                )
+                    // Los datos de la versión 1 no tenían dueño: se descartan y se bajan de la nube
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
+                    .also { instancia = it }
             }
     }
 }

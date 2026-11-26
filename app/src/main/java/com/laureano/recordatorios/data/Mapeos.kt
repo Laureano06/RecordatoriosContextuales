@@ -2,7 +2,7 @@ package com.laureano.recordatorios.data
 
 import com.laureano.recordatorios.data.local.EstadoSyncLocal
 import com.laureano.recordatorios.data.local.RecordatorioEntity
-import com.laureano.recordatorios.data.remote.RecordatorioDto
+import com.laureano.recordatorios.data.remote.RecordatorioRemoto
 import com.laureano.recordatorios.domain.Categoria
 import com.laureano.recordatorios.domain.Categorias
 import com.laureano.recordatorios.domain.EstadoRecordatorio
@@ -13,7 +13,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-// Mapeos explícitos entre las tres capas: DTO (servicio) <-> Entity (Room) <-> dominio (pantallas)
+// Mapeos explícitos entre las tres capas: Firestore <-> Entity (Room) <-> dominio (pantallas)
 
 const val ESTADO_PENDIENTE = "PENDIENTE"
 const val ESTADO_COMPLETADO = "COMPLETADO"
@@ -77,9 +77,9 @@ fun RecordatorioEntity.aDominio(): Recordatorio = Recordatorio(
     }
 )
 
-// Entity -> DTO (lo que se envía al servicio)
-fun RecordatorioEntity.aDto(): RecordatorioDto = RecordatorioDto(
-    id = remotoId,
+// Entity -> documento de Firestore
+fun RecordatorioEntity.aRemoto(): RecordatorioRemoto = RecordatorioRemoto(
+    uid = uid,
     uuid = uuid,
     titulo = titulo,
     descripcion = descripcion,
@@ -93,18 +93,15 @@ fun RecordatorioEntity.aDto(): RecordatorioDto = RecordatorioDto(
     actualizadoEn = actualizadoEn
 )
 
-// DTO -> Entity. Devuelve null si al DTO le falta algo obligatorio o trae valores desconocidos
-fun RecordatorioDto.aEntityOrNull(): RecordatorioEntity? {
-    val remotoId = id ?: return null
-    val uuid = uuid?.takeIf { it.isNotBlank() } ?: return null
-    val titulo = titulo?.takeIf { it.isNotBlank() } ?: return null
-    val categoriaId = categoriaId?.takeIf { Categorias.porId(it) != null } ?: return null
-    val prioridad = prioridad?.takeIf { prioridadDesdeCodigo(it) != null } ?: return null
-    val estado = estado?.takeIf { estadoDesde(it, fechaEstado, motivoCancelacion) != null }
-        ?: return null
+// Documento de Firestore -> Entity. Devuelve null si no pertenece a la cuenta o trae valores desconocidos
+fun RecordatorioRemoto.aEntityOrNull(uidEsperado: String): RecordatorioEntity? {
+    if (uid != uidEsperado || uuid.isBlank() || titulo.isBlank()) return null
+    if (Categorias.porId(categoriaId) == null) return null
+    if (prioridadDesdeCodigo(prioridad) == null) return null
+    if (estadoDesde(estado, fechaEstado, motivoCancelacion) == null) return null
     return RecordatorioEntity(
+        uid = uid,
         uuid = uuid,
-        remotoId = remotoId,
         titulo = titulo,
         descripcion = descripcion,
         categoriaId = categoriaId,
@@ -114,7 +111,7 @@ fun RecordatorioDto.aEntityOrNull(): RecordatorioEntity? {
         motivoCancelacion = motivoCancelacion,
         fechaAviso = fechaAviso,
         ubicacion = ubicacion,
-        actualizadoEn = actualizadoEn ?: 0L,
+        actualizadoEn = actualizadoEn,
         estadoSync = EstadoSyncLocal.SINCRONIZADO
     )
 }

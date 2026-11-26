@@ -24,12 +24,17 @@ sealed interface EstadoSincronizacion {
     data class Fallida(val fallo: FalloRemoto, val hora: LocalDateTime) : EstadoSincronizacion
 }
 
+// Resultado de intentar leer y escribir datos de otra cuenta (prueba de seguridad)
+data class ResultadoPruebaAcceso(val lectura: String, val escritura: String)
+
+class SinSesionException : IllegalStateException("No hay una sesión iniciada")
+
 // Los ViewModels dependen de esta interfaz. Room es la fuente de verdad de las pantallas
 interface RecordatorioRepository {
     val categorias: List<Categoria>
     val estadoSincronizacion: StateFlow<EstadoSincronizacion>
 
-    // Lista lista para mostrar: aplica las preferencias de DataStore (completados y orden)
+    // Lista lista para mostrar: solo de la cuenta activa y con las preferencias aplicadas
     fun observarListado(): Flow<List<Recordatorio>>
     fun observarRecordatorio(id: Long): Flow<Recordatorio?>
     fun observarCantidadPendientes(): Flow<Int>
@@ -39,6 +44,12 @@ interface RecordatorioRepository {
     suspend fun cambiarEstado(id: Long, estado: EstadoRecordatorio)
     suspend fun eliminar(id: Long)
 
-    // Envía los cambios pendientes y trae los del servicio
+    // Envía los cambios pendientes de la cuenta activa y trae los de la nube
     suspend fun sincronizar(): EstadoSincronizacion
+
+    // Antes de cerrar sesión: borra la copia local de lo que ya está en la nube
+    suspend fun prepararCierreDeSesion()
+
+    // Solo para la variante de desarrollo
+    suspend fun probarAccesoAjeno(uidAjeno: String): ResultadoPruebaAcceso
 }

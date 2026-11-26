@@ -6,6 +6,17 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// Lee un archivo .properties de la raíz si existe. Esos archivos no se suben al repositorio
+fun leerPropiedades(nombre: String): Properties = Properties().apply {
+    val archivo = rootProject.file(nombre)
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+
+// Configuración del proyecto de Firebase (ver firebase.properties.example)
+val firebase = leerPropiedades("firebase.properties")
+
+// Datos de la clave de firma (ver keystore.properties.example)
+val firma = leerPropiedades("keystore.properties")
 
 android {
     namespace = "com.laureano.recordatorios"
@@ -17,18 +28,49 @@ android {
         applicationId = "com.laureano.recordatorios"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        // versionCode sube en cada entrega; versionName es lo que ven los testers
+        versionCode = 4
+        versionName = "1.0.0-rc1"
 
-        // URL del servicio remoto: se toma de api.properties (ver api.properties.example)
-        val api = Properties().apply {
-            val archivo = rootProject.file("api.properties")
-            if (archivo.exists()) archivo.inputStream().use { load(it) }
-        }
-        val urlBase = api.getProperty("api.urlBase", "http://localhost:8090/")
-        buildConfigField("String", "API_URL_BASE", "\"$urlBase\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"${firebase.getProperty("firebase.projectId", "")}\"")
+        buildConfigField("String", "FIREBASE_APP_ID", "\"${firebase.getProperty("firebase.appId", "")}\"")
+        buildConfigField("String", "FIREBASE_API_KEY", "\"${firebase.getProperty("firebase.apiKey", "")}\"")
+        buildConfigField("String", "FIREBASE_SENDER_ID", "\"${firebase.getProperty("firebase.senderId", "")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            // Si no hay keystore.properties, el release queda sin firmar en lugar de usar datos falsos
+            val ruta = firma.getProperty("storeFile")
+            if (ruta != null) {
+                storeFile = file(ruta)
+                storePassword = firma.getProperty("storePassword")
+                keyAlias = firma.getProperty("keyAlias")
+                keyPassword = firma.getProperty("keyPassword")
+            }
+        }
+    }
+
+    // Dos ambientes estables: no hay que tocar nada a mano antes de compilar
+    flavorDimensions += "entorno"
+    productFlavors {
+        create("desarrollo") {
+            dimension = "entorno"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            resValue("string", "app_name", "Recordatorios DEV")
+            // Los datos de desarrollo van a otra colección de Firestore
+            buildConfigField("String", "COLECCION_USUARIOS", "\"dev_users\"")
+            buildConfigField("boolean", "HERRAMIENTAS_PRUEBA", "true")
+        }
+        create("produccion") {
+            dimension = "entorno"
+            resValue("string", "app_name", "Recordatorios")
+            buildConfigField("String", "COLECCION_USUARIOS", "\"users\"")
+            buildConfigField("boolean", "HERRAMIENTAS_PRUEBA", "false")
+        }
     }
 
     buildTypes {
@@ -36,6 +78,9 @@ android {
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+            }
+            if (firma.getProperty("storeFile") != null) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
@@ -46,6 +91,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 }
 
@@ -65,12 +111,11 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.logging)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
-    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

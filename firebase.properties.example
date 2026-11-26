@@ -1,0 +1,8 @@
+# Copiá este archivo como firebase.properties (no se sube al repositorio) y completalo con
+# los datos de tu proyecto: Consola de Firebase > Configuración del proyecto > Tus apps.
+# La clave de API de Firebase identifica el proyecto, pero no da acceso por sí sola:
+# lo que protege los datos son las reglas de Firestore.
+firebase.projectId=tu-proyecto-id
+firebase.appId=1:000000000000:android:0000000000000000000000
+firebase.apiKey=AIza...
+firebase.senderId=000000000000

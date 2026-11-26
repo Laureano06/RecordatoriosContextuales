@@ -10,12 +10,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -33,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.laureano.recordatorios.R
+import com.laureano.recordatorios.data.auth.Usuario
 import com.laureano.recordatorios.domain.Orden
 import com.laureano.recordatorios.domain.Preferencias
 import com.laureano.recordatorios.domain.Tema
@@ -44,12 +48,24 @@ fun RutaPreferencias(
     viewModel: PreferenciasViewModel = viewModel(factory = PreferenciasViewModel.Factory)
 ) {
     val preferencias by viewModel.preferencias.collectAsStateWithLifecycle()
+    val usuario by viewModel.usuario.collectAsStateWithLifecycle()
+    val cerrando by viewModel.cerrando.collectAsStateWithLifecycle()
+    val uidAjeno by viewModel.uidAjeno.collectAsStateWithLifecycle()
+    val prueba by viewModel.prueba.collectAsStateWithLifecycle()
     PantallaPreferencias(
         preferencias = preferencias,
+        usuario = usuario,
+        cerrando = cerrando,
+        herramientasPrueba = viewModel.herramientasPrueba,
+        uidAjeno = uidAjeno,
+        prueba = prueba,
         onVolver = onVolver,
         onCambiarTema = viewModel::onCambiarTema,
         onCambiarMostrarCompletados = viewModel::onCambiarMostrarCompletados,
-        onCambiarOrden = viewModel::onCambiarOrden
+        onCambiarOrden = viewModel::onCambiarOrden,
+        onCerrarSesion = viewModel::onCerrarSesion,
+        onUidAjenoChange = viewModel::onUidAjenoChange,
+        onProbarAccesoAjeno = viewModel::onProbarAccesoAjeno
     )
 }
 
@@ -57,10 +73,18 @@ fun RutaPreferencias(
 @Composable
 fun PantallaPreferencias(
     preferencias: Preferencias,
+    usuario: Usuario?,
+    cerrando: Boolean,
+    herramientasPrueba: Boolean,
+    uidAjeno: String,
+    prueba: EstadoPrueba,
     onVolver: () -> Unit,
     onCambiarTema: (Tema) -> Unit,
     onCambiarMostrarCompletados: (Boolean) -> Unit,
     onCambiarOrden: (Orden) -> Unit,
+    onCerrarSesion: () -> Unit,
+    onUidAjenoChange: (String) -> Unit,
+    onProbarAccesoAjeno: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -86,6 +110,24 @@ fun PantallaPreferencias(
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = 8.dp)
         ) {
+            if (usuario != null) {
+                Titulo(stringResource(R.string.pref_cuenta))
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(usuario.email, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = stringResource(R.string.pref_cerrar_sesion_ayuda),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedButton(onClick = onCerrarSesion, enabled = !cerrando) {
+                        Text(stringResource(if (cerrando) R.string.pref_cerrando else R.string.pref_cerrar_sesion))
+                    }
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
             GrupoOpciones(
                 titulo = stringResource(R.string.pref_tema),
                 opciones = Tema.entries,
@@ -120,8 +162,66 @@ fun PantallaPreferencias(
                 textoDe = { it.etiqueta },
                 onSeleccionar = onCambiarOrden
             )
+            if (herramientasPrueba && usuario != null) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                PruebaSeguridad(usuario, uidAjeno, prueba, onUidAjenoChange, onProbarAccesoAjeno)
+            }
         }
     }
+}
+
+// Solo en la variante de desarrollo: intenta leer y escribir los datos de otra cuenta
+@Composable
+private fun PruebaSeguridad(
+    usuario: Usuario,
+    uidAjeno: String,
+    prueba: EstadoPrueba,
+    onUidAjenoChange: (String) -> Unit,
+    onProbar: () -> Unit
+) {
+    Titulo(stringResource(R.string.prueba_titulo))
+    Column(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SelectionContainer {
+            Text(
+                text = stringResource(R.string.prueba_mi_uid, usuario.uid),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        OutlinedTextField(
+            value = uidAjeno,
+            onValueChange = onUidAjenoChange,
+            label = { Text(stringResource(R.string.prueba_uid_ajeno)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedButton(
+            onClick = onProbar,
+            enabled = uidAjeno.isNotEmpty() && prueba !is EstadoPrueba.EnCurso
+        ) {
+            Text(stringResource(R.string.prueba_boton))
+        }
+        when (prueba) {
+            EstadoPrueba.Inactiva -> Unit
+            EstadoPrueba.EnCurso -> Text(stringResource(R.string.prueba_en_curso))
+            is EstadoPrueba.Resultado -> {
+                Text(prueba.lectura, color = MaterialTheme.colorScheme.error)
+                Text(prueba.escritura, color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Titulo(texto: String) {
+    Text(
+        text = texto,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+    )
 }
 
 @Composable
@@ -133,12 +233,7 @@ private fun <T> GrupoOpciones(
     onSeleccionar: (T) -> Unit
 ) {
     Column(modifier = Modifier.selectableGroup()) {
-        Text(
-            text = titulo,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        Titulo(titulo)
         opciones.forEach { opcion ->
             Row(
                 modifier = Modifier
@@ -165,10 +260,18 @@ private fun PantallaPreferenciasPreview() {
     RecordatoriosContextualesTheme {
         PantallaPreferencias(
             preferencias = Preferencias(),
+            usuario = Usuario("abc123", "ana@ejemplo.com"),
+            cerrando = false,
+            herramientasPrueba = true,
+            uidAjeno = "",
+            prueba = EstadoPrueba.Inactiva,
             onVolver = {},
             onCambiarTema = {},
             onCambiarMostrarCompletados = {},
-            onCambiarOrden = {}
+            onCambiarOrden = {},
+            onCerrarSesion = {},
+            onUidAjenoChange = {},
+            onProbarAccesoAjeno = {}
         )
     }
 }

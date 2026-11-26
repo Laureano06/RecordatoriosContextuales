@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">RecordatoriosContextuales</string>
     <string name="titulo_pantalla">Mis recordatorios</string>
     <string name="lista_vacia">Todavía no tenés recordatorios</string>
     <string name="sin_resultados">Ningún recordatorio coincide con los filtros</string>
@@ -39,7 +38,7 @@
     <string name="confirmar_eliminar_texto">Se borra del dispositivo y, al sincronizar, también del servicio.</string>
     <string name="dato_sincronizacion">Sincronización</string>
     <string name="sincronizar">Sincronizar</string>
-    <string name="sync_inactiva">Datos guardados en el dispositivo</string>
+    <string name="sync_inactiva">Datos guardados en el teléfono</string>
     <string name="sync_en_curso">Sincronizando…</string>
     <string name="sync_completa">Todo sincronizado (%1$s)</string>
     <plurals name="cambios_pendientes">
@@ -50,4 +49,23 @@
     <string name="pref_tema">Tema</string>
     <string name="pref_mostrar_completados">Mostrar recordatorios completados</string>
     <string name="pref_orden">Orden del listado</string>
+    <string name="pref_cuenta">Cuenta</string>
+    <string name="pref_cerrar_sesion">Cerrar sesión</string>
+    <string name="pref_cerrando">Cerrando sesión…</string>
+    <string name="pref_cerrar_sesion_ayuda">Al cerrar sesión se borra del teléfono lo que ya está en la nube. Los cambios sin sincronizar quedan guardados solo para esta cuenta.</string>
+    <string name="acceso_iniciar">Iniciar sesión</string>
+    <string name="acceso_crear_cuenta">Crear cuenta</string>
+    <string name="acceso_email">Email</string>
+    <string name="acceso_contrasenia">Contraseña</string>
+    <string name="acceso_minimo">Mínimo 6 caracteres</string>
+    <string name="acceso_en_curso">Verificando…</string>
+    <string name="acceso_boton_iniciar">Ingresar</string>
+    <string name="acceso_boton_registro">Crear cuenta</string>
+    <string name="acceso_no_tengo">No tengo cuenta: registrarme</string>
+    <string name="acceso_ya_tengo">Ya tengo cuenta: iniciar sesión</string>
+    <string name="prueba_titulo">Prueba de seguridad (solo desarrollo)</string>
+    <string name="prueba_mi_uid">Mi uid: %1$s</string>
+    <string name="prueba_uid_ajeno">uid de otra cuenta</string>
+    <string name="prueba_boton">Intentar leer y escribir sus datos</string>
+    <string name="prueba_en_curso">Probando…</string>
 </resources>

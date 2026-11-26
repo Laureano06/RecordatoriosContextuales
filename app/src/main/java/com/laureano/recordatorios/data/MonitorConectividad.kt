@@ -14,7 +14,7 @@ class MonitorConectividad(context: Context) {
 
     private val conectividad = context.getSystemService(ConnectivityManager::class.java)
 
-    private fun hayRed(): Boolean {
+    fun hayRed(): Boolean {
         val capacidades = conectividad.getNetworkCapabilities(conectividad.activeNetwork)
         return capacidades?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
     }

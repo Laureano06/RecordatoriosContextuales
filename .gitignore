@@ -15,5 +15,7 @@
 local.properties
 .kotlin/
 build/
-api.properties
-tools/datos_servidor.json
+firebase.properties
+keystore.properties
+*.jks
+*.keystore
