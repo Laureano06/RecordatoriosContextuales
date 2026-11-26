@@ -4,8 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.laureano.recordatorios.data.DatosSimulados
-import com.laureano.recordatorios.ui.PantallaRecordatorios
+import com.laureano.recordatorios.ui.navegacion.NavegacionApp
 import com.laureano.recordatorios.ui.theme.RecordatoriosContextualesTheme
 
 class MainActivity : ComponentActivity() {
@@ -14,10 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             RecordatoriosContextualesTheme {
-                PantallaRecordatorios(
-                    estado = DatosSimulados.cargar(),
-                    coloresPorCategoria = DatosSimulados.coloresPorCategoria
-                )
+                NavegacionApp()
             }
         }
     }
